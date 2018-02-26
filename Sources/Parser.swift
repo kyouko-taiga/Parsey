@@ -67,12 +67,6 @@ public extension ParserInput {
         self.location = location
     }
 
-    internal init() {
-        self.lineStream = Substring()
-        self.stream = self.lineStream
-        self.location = SourceLocation()
-    }
-
 }
 
 extension ParserInput : Sequence {
