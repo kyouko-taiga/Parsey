@@ -14,7 +14,7 @@ public typealias SourceRange = CountableRange<SourceLocation>
 /// Input with location tracking
 public struct ParserInput {
     public var lineStream: Substring
-    public var stream: Substring
+    public var stream: String
     public var location: SourceLocation
 }
 
@@ -49,18 +49,18 @@ public extension ParserInput {
 
     init(_ string: String) {
         self.lineStream = Substring(string)
-        self.stream = self.lineStream
+        self.stream = string
         self.location = SourceLocation()
     }
 
     init<S: Sequence>(_ stream: S) where S.Element == Character {
         self.lineStream = Substring(stream)
-        self.stream = self.lineStream
+        self.stream = String(stream)
         self.location = SourceLocation()
     }
 
     internal init(
-        stream: Substring, lineStream: Substring, location: SourceLocation = SourceLocation())
+        stream: String, lineStream: Substring, location: SourceLocation = SourceLocation())
     {
         self.lineStream = lineStream
         self.stream = stream
@@ -73,7 +73,7 @@ extension ParserInput : Sequence {
 
     public func prefix(_ maxLength: Int) -> ParserInput {
         return ParserInput(
-            stream: stream.prefix(maxLength),
+            stream: String(stream.prefix(maxLength)),
             lineStream: lineStream,
             location: location
         )
@@ -84,16 +84,16 @@ extension ParserInput : Sequence {
         return prefixLength < 0 ? self : dropFirst(prefixLength)
     }
 
-    public typealias Iterator = Substring.Iterator
+    public typealias Iterator = String.Iterator
     public typealias SubSequence = ParserInput
 
-    public func makeIterator() -> Substring.Iterator {
+    public func makeIterator() -> Iterator {
         return stream.makeIterator()
     }
 
     public func prefix(while predicate: (Character) throws -> Bool) rethrows -> ParserInput {
         var newLoc = location
-        var newStream = Substring()
+        var newStream = String()
         for char in stream {
             guard try predicate(char) else { break }
             newStream.append(char)
@@ -105,7 +105,7 @@ extension ParserInput : Sequence {
         }
         return ParserInput(
             stream: newStream,
-            lineStream: newStream,
+            lineStream: Substring(newStream),
             location: newLoc
         )
     }
@@ -118,7 +118,7 @@ extension ParserInput : Sequence {
             guard try predicate(char) else { break }
             newStream.removeFirst()
             if char == "\n" {
-                newLineStream = newStream
+                newLineStream = Substring(newStream)
                 newLoc.advanceToNewLine()
             } else {
                 newLoc.advance(by: 1)
@@ -134,15 +134,15 @@ extension ParserInput : Sequence {
     public func dropFirst() -> ParserInput {
         guard let first = stream.first else { return self }
         if first == "\n" {
-            let newStream = stream.dropFirst()
+            let newStream = String(stream.dropFirst())
             return ParserInput(
                 stream: newStream,
-                lineStream: newStream,
+                lineStream: Substring(newStream),
                 location: location.newLine()
             )
         }
         return ParserInput(
-            stream: stream.dropFirst(),
+            stream: String(stream.dropFirst()),
             lineStream: lineStream,
             location: location.advanced(by: 1)
         )
@@ -157,7 +157,7 @@ extension ParserInput : Sequence {
             let char = newStream.first
             newStream.removeFirst()
             if char == "\n" {
-                newLineStream = newStream
+                newLineStream = Substring(newStream)
                 newLoc.advanceToNewLine()
             } else {
                 newLoc.advance(by: 1)
